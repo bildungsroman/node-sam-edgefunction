@@ -16,6 +16,10 @@ Resources:
       Timeout: 5
       Tracing: Active
       Role: !GetAtt FunctionRole.Arn
+      Environment:
+        Variables:
+          FUNCTION_NAME: !Ref notEdge
+          FUNCTION_ARN: !GetAtt notEdge.Arn
   FunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -32,6 +36,31 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: AccessnotEdge
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt notEdge.Arn
+  notEdge:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-notEdge
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: notEdge
+      CodeUri: src/notEdge
+      Handler: index.handler
+      Runtime: nodejs10.x
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
 Parameters:
   StackTagName:
     Type: String
